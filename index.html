@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Café Stock Tracker</title>
+<style>
+:root{
+  --bg:#f4f4f2; --card:#ffffff; --ink:#1f2328; --muted:#6b7280; --line:#e5e5e1;
+  --chip:#ebebe7; --accent:#f26a1b; --accent-ink:#ffffff; --accent-soft:#fdebdf;
+  --ok:#2f6f4f; --shadow:0 1px 2px rgba(20,20,20,.05),0 6px 18px rgba(20,20,20,.04);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16171a; --card:#1f2024; --ink:#ececec; --muted:#9a9ca3; --line:#2e3036;
+    --chip:#2a2c31; --accent-soft:#3a2517; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 80px}
+h1{font-size:30px;margin:0 0 4px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 22px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.stat{padding:16px 18px}
+.stat .k{color:var(--muted);font-size:14px}
+.stat .v{font-size:34px;font-weight:700;letter-spacing:-.02em}
+.stat .v.low{color:var(--accent)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:12px 20px;border-radius:999px;font-size:17px;font-weight:600;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.tab .n{margin-left:8px;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:1px 8px;font-size:13px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.chip{border:0;background:var(--chip);color:var(--ink);padding:8px 14px;border-radius:999px;font-size:15px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700;outline:1.5px solid var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.item{padding:18px}
+.item.is-low{border-color:var(--accent)}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.name{font-size:19px;font-weight:650;line-height:1.25}
+.meta{color:var(--muted);font-size:14px;margin-top:2px}
+.badge{background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.qty-row{display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px}
+.qty{font-size:46px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.qty small{font-size:15px;font-weight:500;color:var(--muted);margin-left:6px;letter-spacing:0}
+.stepper{display:flex;gap:8px}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;font-size:20px;font-weight:600;min-width:48px;height:48px;cursor:pointer;padding:0 14px}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.text{font-size:16px;height:44px}
+.reorder{color:var(--muted);font-size:15px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:10px}
+.reorder b{color:var(--ink)}
+.edit-link{background:none;border:0;color:var(--accent);font-weight:650;font-size:15px;cursor:pointer;padding:6px 0}
+.form{display:grid;gap:10px;margin-top:12px}
+.form label{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.form input,.form select{font:inherit;font-size:17px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+.form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form .actions{display:flex;gap:8px;margin-top:4px}
+.form .actions .btn{flex:1}
+.panel{padding:22px}
+.panel h2{margin:0 0 4px;font-size:24px}
+.cat-h{margin:20px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.order-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.order-row .tot{font-size:26px;font-weight:700;color:var(--accent);white-space:nowrap}
+.order-row .bd{color:var(--muted);font-size:14px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 4px;align-items:center}
+.toolbar input{font:inherit;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:210px}
+.empty{color:var(--muted);padding:24px 0}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--card);padding:12px 18px;border-radius:12px;font-size:16px;opacity:0;pointer-events:none;transition:.2s;z-index:9}
+#toast.show{opacity:1;transform:translateX(-50%)}
+#toast.err{background:#b3261e;color:#fff}
+.status{color:var(--muted);font-size:14px;min-height:20px}
+@media (max-width:520px){.qty{font-size:40px}.wrap{padding-top:20px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Café Stock Tracker</h1>
+  <p class="sub">Three outlets · live in Supabase · <span class="status" id="status">Loading…</span></p>
+  <div class="stats" id="stats"></div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="chips" id="chips"></div>
+  <div id="view"></div>
+</div>
+<div id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+const SUPABASE_URL = "https://muwebigqvvhawusvmpqb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_wzvKzSo4age7tfpniJ1P2A_dMGoww4g";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const OUTLETS = ["Orchard","Jurong","Tampines"];
+const ORDER_TAB = "Order list";
+const EXPORT_TAB = "Export PDF";
+let lastOutlet = OUTLETS[0];
+const lsGet = k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+
+let rows = [];
+let tab = OUTLETS[0];
+let cat = "All";
+let editingId = null;
+const timers = {};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const isLow = r => r.qty_on_hand <= r.reorder_level;
+const shortfall = r => Math.max(r.reorder_level - r.qty_on_hand, 0);
+
+function toast(msg, err){
+  const t = $("#toast"); t.textContent = msg; t.className = "show" + (err ? " err" : "");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = "", 2200);
+}
+function setStatus(s){ $("#status").textContent = s; }
+
+async function load(){
+  setStatus("Loading…");
+  const { data, error } = await sb.from("stock_counts").select("*").order("sku");
+  if (error){ setStatus("Could not load"); toast("Load failed: " + error.message, true); return; }
+  rows = data; setStatus("Synced"); render();
+}
+
+async function save(id, patch){
+  const row = rows.find(r => r.id === id);
+  const before = { ...row };
+  Object.assign(row, patch); render();
+  setStatus("Saving…");
+  const { error } = await sb.from("stock_counts").update(patch).eq("id", id);
+  if (error){
+    Object.assign(row, before); render();
+    setStatus("Error"); toast("Save failed: " + error.message, true); return false;
+  }
+  setStatus("Saved"); return true;
+}
+
+function quickAdjust(id, field, delta){
+  const row = rows.find(r => r.id === id);
+  row[field] = Math.max(0, row[field] + delta); render();
+  setStatus("Saving…");
+  clearTimeout(timers[id + field]);
+  timers[id + field] = setTimeout(async () => {
+    const { error } = await sb.from("stock_counts").update({ [field]: row[field] }).eq("id", id);
+    if (error){ toast("Save failed: " + error.message, true); setStatus("Error"); load(); }
+    else setStatus("Saved");
+  }, 500);
+}
+
+function categories(){
+  return [...new Set(rows.filter(r => r.outlet === tab).map(r => r.category))].sort();
+}
+
+function renderStats(){
+  const low = o => rows.filter(r => (!o || r.outlet === o) && isLow(r)).length;
+  const cards = [["Total SKUs", rows.length, false], ["Low (all outlets)", low(), true],
+    ...OUTLETS.map(o => [o + " low", low(o), true])];
+  $("#stats").innerHTML = cards.map(([k,v,l]) =>
+    `<div class="card stat"><div class="k">${esc(k)}</div><div class="v ${l && v ? "low" : ""}">${v}</div></div>`).join("");
+}
+
+function renderTabs(){
+  const mk = t => {
+    const n = (t === ORDER_TAB || t === EXPORT_TAB) ? "" : rows.filter(r => r.outlet === t && isLow(r)).length;
+    return `<button class="tab" role="tab" aria-selected="${t === tab}" data-tab="${esc(t)}">${esc(t)}${n ? `<span class="n">${n}</span>` : ""}</button>`;
+  };
+  $("#tabs").innerHTML = [...OUTLETS, ORDER_TAB, EXPORT_TAB].map(mk).join("");
+}
+
+function renderChips(){
+  if (!OUTLETS.includes(tab)){ $("#chips").innerHTML = ""; return; }
+  const cs = ["All", ...categories()];
+  if (!cs.includes(cat)) cat = "All";
+  $("#chips").innerHTML = cs.map(c => `<button class="chip" aria-pressed="${c === cat}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
+}
+
+function itemCard(r){
+  if (r.id === editingId){
+    const cats = [...new Set(rows.map(x => x.category))].sort();
+    return `<div class="card item" data-id="${r.id}">
+      <div class="meta">${esc(r.sku)} · ${esc(r.outlet)}</div>
+      <div class="form">
+        <label>Item name<input name="item_name" value="${esc(r.item_name)}"></label>
+        <div class="two">
+          <label>Unit<input name="unit" value="${esc(r.unit)}"></label>
+          <label>Category<select name="category">${cats.map(c => `<option ${c === r.category ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></label>
+        </div>
+        <div class="two">
+          <label>In stock<input name="qty_on_hand" type="number" min="0" step="1" value="${r.qty_on_hand}"></label>
+          <label>Reorder level<input name="reorder_level" type="number" min="0" step="1" value="${r.reorder_level}"></label>
+        </div>
+        <div class="actions">
+          <button class="btn text primary" data-act="save">Save</button>
+          <button class="btn text" data-act="cancel">Cancel</button>
+        </div>
+      </div></div>`;
+  }
+  const low = isLow(r);
+  return `<div class="card item ${low ? "is-low" : ""}" data-id="${r.id}">
+    <div class="row">
+      <div><div class="name">${esc(r.item_name)}</div><div class="meta">${esc(r.sku)} · ${esc(r.category)}</div></div>
+      ${low ? `<span class="badge">Low</span>` : ""}
+    </div>
+    <div class="qty-row">
+      <div class="qty">${r.qty_on_hand}<small>${esc(r.unit)}</small></div>
+      <div class="stepper">
+        <button class="btn" data-act="qty-dec" aria-label="Remove one">−</button>
+        <button class="btn primary" data-act="qty-inc" aria-label="Add one">+</button>
+      </div>
+    </div>
+    <div class="reorder">
+      <span>Reorder at <b>${r.reorder_level}</b></span>
+      <span class="stepper">
+        <button class="btn text" data-act="lvl-dec" aria-label="Lower reorder level" style="min-width:40px;height:36px">−</button>
+        <button class="btn text" data-act="lvl-inc" aria-label="Raise reorder level" style="min-width:40px;height:36px">+</button>
+      </span>
+    </div>
+    <button class="edit-link" data-act="edit">Edit item</button>
+  </div>`;
+}
+
+function orderList(){
+  const map = {};
+  rows.forEach(r => {
+    const s = shortfall(r); if (!s) return;
+    const e = map[r.sku] ||= { sku: r.sku, name: r.item_name, unit: r.unit, category: r.category, total: 0, by: {} };
+    e.total += s; e.by[r.outlet] = s;
+  });
+  return Object.values(map).sort((a,b) => a.category.localeCompare(b.category) || a.sku.localeCompare(b.sku));
+}
+const breakdown = e => OUTLETS.filter(o => e.by[o]).map(o => `${o} ${e.by[o]}`).join(", ");
+
+function orderText(list){
+  const date = new Date().toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
+  let out = `Stock order – ${date}\n`;
+  let c = "";
+  list.forEach(e => {
+    if (e.category !== c){ c = e.category; out += `\n${c}\n`; }
+    out += `• ${e.name}: ${e.total} ${e.unit} (${breakdown(e)})\n`;
+  });
+  return out.trim();
+}
+
+function renderOrder(){
+  const list = orderList();
+  let html = `<div class="card panel"><h2>Order from suppliers</h2>
+    <div class="meta">Shortfall = reorder level − in stock, summed across all three outlets.</div>`;
+  if (!list.length){
+    html += `<div class="empty">Nothing to order – every item is above its reorder level.</div></div>`;
+    $("#view").innerHTML = html; return;
+  }
+  let c = "";
+  list.forEach(e => {
+    if (e.category !== c){ c = e.category; html += `<div class="cat-h">${esc(c)}</div>`; }
+    html += `<div class="order-row"><div><div class="name">${esc(e.name)}</div>
+      <div class="bd">${esc(breakdown(e))}</div></div>
+      <div class="tot">${e.total} <small style="font-size:14px;color:var(--muted);font-weight:500">${esc(e.unit)}</small></div></div>`;
+  });
+  const num = lsGet("supplierNumber");
+  html += `<div class="toolbar">
+      <button class="btn text primary" data-act="copy">Copy list</button>
+      <button class="btn text" data-act="wa">Send via WhatsApp</button>
+      <input id="waNum" inputmode="tel" placeholder="Supplier no. e.g. 6591234567" value="${esc(num)}" aria-label="Supplier WhatsApp number (optional)">
+    </div>
+    <div class="meta">WhatsApp opens with the list pre-filled. Leave the number blank to pick a contact. Need a PDF? Use the Export PDF tab.</div></div>`;
+  $("#view").innerHTML = html;
+}
+
+function renderExport(){
+  const n = orderList().length;
+  $("#view").innerHTML = `<div class="grid">
+    <div class="card panel"><h2>Supplier order list</h2>
+      <div class="meta">${n ? n + " items to reorder, totalled across all outlets." : "Nothing to order right now."}</div>
+      <div class="toolbar"><button class="btn text primary" data-act="pdf" ${n ? "" : "disabled"}>Download PDF</button></div></div>
+    <div class="card panel"><h2>Stock levels – all outlets</h2>
+      <div class="meta">All 42 items with quantity, reorder level and Low status.</div>
+      <div class="toolbar"><button class="btn text primary" data-act="pdf-stock">Download PDF</button></div></div>
+    <div class="card panel"><h2>Single outlet</h2>
+      <div class="meta">Stock levels for one outlet.</div>
+      <div class="toolbar"><select id="pdfOutlet" class="btn text" style="font-size:17px">${OUTLETS.map(o => `<option ${o === lastOutlet ? "selected" : ""}>${o}</option>`).join("")}</select>
+      <button class="btn text primary" data-act="pdf-outlet">Download PDF</button></div></div>
+  </div>`;
+}
+
+function renderOutlet(){
+  const items = rows.filter(r => r.outlet === tab && (cat === "All" || r.category === cat));
+  $("#view").innerHTML = items.length
+    ? `<div class="grid">${items.map(itemCard).join("")}</div>`
+    : `<div class="empty">No items.</div>`;
+}
+
+function render(){
+  renderStats(); renderTabs(); renderChips();
+  try {
+    if (tab === ORDER_TAB) renderOrder();
+    else if (tab === EXPORT_TAB) renderExport();
+    else renderOutlet();
+  } catch (err) {
+    console.error(err);
+    $("#view").innerHTML = `<div class="empty">Something went wrong showing this tab: ${esc(err.message)}</div>`;
+  }
+}
+
+/* ---------- exports ---------- */
+function savePdf(title, head, body, file){
+  if (!window.jspdf){ toast("PDF library failed to load", true); return; }
+  const doc = new window.jspdf.jsPDF();
+  doc.setFontSize(18); doc.text(title, 14, 18);
+  doc.setFontSize(10); doc.setTextColor(110);
+  doc.text(new Date().toLocaleString("en-GB"), 14, 25);
+  doc.autoTable({ startY: 30, head: [head], body, styles:{ fontSize:10 },
+    headStyles:{ fillColor:[242,106,27] }, alternateRowStyles:{ fillColor:[246,246,244] } });
+  doc.save(file); toast("PDF downloaded");
+}
+
+async function copyText(text){
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  toast("Order list copied");
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", async e => {
+  const tabBtn = e.target.closest("[data-tab]");
+  if (tabBtn){ tab = tabBtn.dataset.tab; if (OUTLETS.includes(tab)) lastOutlet = tab; cat = "All"; editingId = null; render(); return; }
+  const chip = e.target.closest("[data-cat]");
+  if (chip){ cat = chip.dataset.cat; render(); return; }
+
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const act = b.dataset.act;
+  const cardEl = b.closest("[data-id]"); const id = cardEl ? Number(cardEl.dataset.id) : null;
+
+  if (act === "qty-inc") quickAdjust(id, "qty_on_hand", 1);
+  else if (act === "qty-dec") quickAdjust(id, "qty_on_hand", -1);
+  else if (act === "lvl-inc") quickAdjust(id, "reorder_level", 1);
+  else if (act === "lvl-dec") quickAdjust(id, "reorder_level", -1);
+  else if (act === "edit"){ editingId = id; render(); }
+  else if (act === "cancel"){ editingId = null; render(); }
+  else if (act === "save"){
+    const v = n => cardEl.querySelector(`[name="${n}"]`).value;
+    const patch = {
+      item_name: v("item_name").trim(), unit: v("unit").trim(), category: v("category"),
+      qty_on_hand: Number(v("qty_on_hand")), reorder_level: Number(v("reorder_level"))
+    };
+    if (!patch.item_name || !patch.unit) return toast("Name and unit are required", true);
+    if (![patch.qty_on_hand, patch.reorder_level].every(n => Number.isInteger(n) && n >= 0))
+      return toast("Quantities must be whole numbers ≥ 0", true);
+    if (await save(id, patch)){ editingId = null; render(); toast("Saved"); }
+  }
+  else if (act === "copy") copyText(orderText(orderList()));
+  else if (act === "pdf"){
+    const list = orderList();
+    savePdf("Stock order", ["Category","Item","Unit","Breakdown","Order qty"],
+      list.map(e => [e.category, e.name, e.unit, breakdown(e), e.total]), "stock-order.pdf");
+  }
+  else if (act === "pdf-stock"){
+    const body = [...rows].sort((a,b) => OUTLETS.indexOf(a.outlet) - OUTLETS.indexOf(b.outlet) || a.sku.localeCompare(b.sku))
+      .map(r => [r.outlet, r.item_name, r.category, r.qty_on_hand + " " + r.unit, r.reorder_level, isLow(r) ? "LOW" : ""]);
+    savePdf("Stock levels – all outlets", ["Outlet","Item","Category","In stock","Reorder at","Status"], body, "stock-levels.pdf");
+  }
+  else if (act === "pdf-outlet"){
+    const o = $("#pdfOutlet").value;
+    const body = rows.filter(r => r.outlet === o).sort((a,b) => a.sku.localeCompare(b.sku))
+      .map(r => [r.item_name, r.category, r.qty_on_hand + " " + r.unit, r.reorder_level, isLow(r) ? "LOW" : ""]);
+    savePdf("Stock levels – " + o, ["Item","Category","In stock","Reorder at","Status"], body, `stock-${o.toLowerCase()}.pdf`);
+  }
+  else if (act === "wa"){
+    const num = ($("#waNum").value || "").replace(/\D/g, "");
+    lsSet("supplierNumber", num);
+    const url = `https://wa.me/${num}?text=${encodeURIComponent(orderText(orderList()))}`;
+    window.open(url, "_blank", "noopener");
+  }
+});
+
+load();
+</script>
+</body>
+</html>
