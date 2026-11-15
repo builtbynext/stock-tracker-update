@@ -72,9 +72,24 @@ h1{font-size:30px;margin:0 0 4px;letter-spacing:-.02em}
 #toast.err{background:#b3261e;color:#fff}
 .status{color:var(--muted);font-size:14px;min-height:20px}
 @media (max-width:520px){.qty{font-size:40px}.wrap{padding-top:20px}h1{font-size:26px}}
+iconify-icon{display:inline-block;vertical-align:-.2em;font-size:1.15em;line-height:1}
+.btn iconify-icon{font-size:26px;vertical-align:middle}
+.btn.text iconify-icon{font-size:22px;margin-right:6px}
+.btn.step-sm iconify-icon{font-size:22px;margin:0}
+.tab iconify-icon{font-size:22px;margin-right:8px;vertical-align:-.3em}
+.badge iconify-icon{font-size:15px;margin-right:4px;vertical-align:-.25em}
+.edit-link iconify-icon{margin-right:6px}
+.panel h2 iconify-icon{color:var(--accent);margin-right:8px;font-size:26px;vertical-align:-.25em}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1}
+#fx-top{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:8}
+.stat,.item{will-change:transform;transform-origin:50% 50%}
+@media (prefers-reduced-motion: reduce){#fx,#fx-top{display:none}}
 </style>
 </head>
 <body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<canvas id="fx-top" aria-hidden="true"></canvas>
 <div class="wrap">
   <h1>Café Stock Tracker</h1>
   <p class="sub">Three outlets · live in Supabase · <span class="status" id="status">Loading…</span></p>
@@ -85,6 +100,7 @@ h1{font-size:30px;margin:0 0 4px;letter-spacing:-.02em}
 </div>
 <div id="toast" role="status"></div>
 
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -96,7 +112,9 @@ const OUTLETS = ["Orchard","Jurong","Tampines"];
 const ORDER_TAB = "Order list";
 const EXPORT_TAB = "Export PDF";
 let lastOutlet = OUTLETS[0];
-const lsGet = k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
+const ic = n => `<iconify-icon icon="solar:${n}-bold-duotone" aria-hidden="true"></iconify-icon>`;
+const TAB_ICON = { "Order list": "cart-large", "Export PDF": "file-download" };
+const lsGet =k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
 let rows = [];
@@ -163,7 +181,7 @@ function renderStats(){
 function renderTabs(){
   const mk = t => {
     const n = (t === ORDER_TAB || t === EXPORT_TAB) ? "" : rows.filter(r => r.outlet === t && isLow(r)).length;
-    return `<button class="tab" role="tab" aria-selected="${t === tab}" data-tab="${esc(t)}">${esc(t)}${n ? `<span class="n">${n}</span>` : ""}</button>`;
+    return `<button class="tab" role="tab" aria-selected="${t === tab}" data-tab="${esc(t)}">${ic(TAB_ICON[t] || "shop")}${esc(t)}${n ? `<span class="n">${n}</span>` : ""}</button>`;
   };
   $("#tabs").innerHTML = [...OUTLETS, ORDER_TAB, EXPORT_TAB].map(mk).join("");
 }
@@ -191,8 +209,8 @@ function itemCard(r){
           <label>Reorder level<input name="reorder_level" type="number" min="0" step="1" value="${r.reorder_level}"></label>
         </div>
         <div class="actions">
-          <button class="btn text primary" data-act="save">Save</button>
-          <button class="btn text" data-act="cancel">Cancel</button>
+          <button class="btn text primary" data-act="save">${ic("diskette")}Save</button>
+          <button class="btn text" data-act="cancel">${ic("close-circle")}Cancel</button>
         </div>
       </div></div>`;
   }
@@ -200,23 +218,23 @@ function itemCard(r){
   return `<div class="card item ${low ? "is-low" : ""}" data-id="${r.id}">
     <div class="row">
       <div><div class="name">${esc(r.item_name)}</div><div class="meta">${esc(r.sku)} · ${esc(r.category)}</div></div>
-      ${low ? `<span class="badge">Low</span>` : ""}
+      ${low ? `<span class="badge">${ic("danger-triangle")}Low</span>` : ""}
     </div>
     <div class="qty-row">
       <div class="qty">${r.qty_on_hand}<small>${esc(r.unit)}</small></div>
       <div class="stepper">
-        <button class="btn" data-act="qty-dec" aria-label="Remove one">−</button>
-        <button class="btn primary" data-act="qty-inc" aria-label="Add one">+</button>
+        <button class="btn" data-act="qty-dec" aria-label="Remove one">${ic("minus-circle")}</button>
+        <button class="btn primary" data-act="qty-inc" aria-label="Add one">${ic("add-circle")}</button>
       </div>
     </div>
     <div class="reorder">
       <span>Reorder at <b>${r.reorder_level}</b></span>
       <span class="stepper">
-        <button class="btn text" data-act="lvl-dec" aria-label="Lower reorder level" style="min-width:40px;height:36px">−</button>
-        <button class="btn text" data-act="lvl-inc" aria-label="Raise reorder level" style="min-width:40px;height:36px">+</button>
+        <button class="btn text step-sm" data-act="lvl-dec" aria-label="Lower reorder level" style="min-width:40px;height:36px">${ic("minus-square")}</button>
+        <button class="btn text step-sm" data-act="lvl-inc" aria-label="Raise reorder level" style="min-width:40px;height:36px">${ic("add-square")}</button>
       </span>
     </div>
-    <button class="edit-link" data-act="edit">Edit item</button>
+    <button class="edit-link" data-act="edit">${ic("pen")}Edit item</button>
   </div>`;
 }
 
@@ -244,7 +262,7 @@ function orderText(list){
 
 function renderOrder(){
   const list = orderList();
-  let html = `<div class="card panel"><h2>Order from suppliers</h2>
+  let html = `<div class="card panel"><h2>${ic("cart-large")}Order from suppliers</h2>
     <div class="meta">Shortfall = reorder level − in stock, summed across all three outlets.</div>`;
   if (!list.length){
     html += `<div class="empty">Nothing to order – every item is above its reorder level.</div></div>`;
@@ -259,8 +277,8 @@ function renderOrder(){
   });
   const num = lsGet("supplierNumber");
   html += `<div class="toolbar">
-      <button class="btn text primary" data-act="copy">Copy list</button>
-      <button class="btn text" data-act="wa">Send via WhatsApp</button>
+      <button class="btn text primary" data-act="copy">${ic("copy")}Copy list</button>
+      <button class="btn text" data-act="wa">${ic("chat-round-dots")}Send via WhatsApp</button>
       <input id="waNum" inputmode="tel" placeholder="Supplier no. e.g. 6591234567" value="${esc(num)}" aria-label="Supplier WhatsApp number (optional)">
     </div>
     <div class="meta">WhatsApp opens with the list pre-filled. Leave the number blank to pick a contact. Need a PDF? Use the Export PDF tab.</div></div>`;
@@ -270,16 +288,16 @@ function renderOrder(){
 function renderExport(){
   const n = orderList().length;
   $("#view").innerHTML = `<div class="grid">
-    <div class="card panel"><h2>Supplier order list</h2>
+    <div class="card panel"><h2>${ic("document-text")}Supplier order list</h2>
       <div class="meta">${n ? n + " items to reorder, totalled across all outlets." : "Nothing to order right now."}</div>
-      <div class="toolbar"><button class="btn text primary" data-act="pdf" ${n ? "" : "disabled"}>Download PDF</button></div></div>
-    <div class="card panel"><h2>Stock levels – all outlets</h2>
+      <div class="toolbar"><button class="btn text primary" data-act="pdf" ${n ? "" : "disabled"}>${ic("file-download")}Download PDF</button></div></div>
+    <div class="card panel"><h2>${ic("box")}Stock levels – all outlets</h2>
       <div class="meta">All 42 items with quantity, reorder level and Low status.</div>
-      <div class="toolbar"><button class="btn text primary" data-act="pdf-stock">Download PDF</button></div></div>
-    <div class="card panel"><h2>Single outlet</h2>
+      <div class="toolbar"><button class="btn text primary" data-act="pdf-stock">${ic("file-download")}Download PDF</button></div></div>
+    <div class="card panel"><h2>${ic("shop")}Single outlet</h2>
       <div class="meta">Stock levels for one outlet.</div>
       <div class="toolbar"><select id="pdfOutlet" class="btn text" style="font-size:17px">${OUTLETS.map(o => `<option ${o === lastOutlet ? "selected" : ""}>${o}</option>`).join("")}</select>
-      <button class="btn text primary" data-act="pdf-outlet">Download PDF</button></div></div>
+      <button class="btn text primary" data-act="pdf-outlet">${ic("file-download")}Download PDF</button></div></div>
   </div>`;
 }
 
@@ -377,6 +395,150 @@ document.addEventListener("click", async e => {
 });
 
 load();
+
+/* ---------- motion: particles, butterfly, spring-wobble cards ---------- */
+(function motion(){
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const bg = $("#fx"), top = $("#fx-top");
+  const bctx = bg.getContext("2d"), tctx = top.getContext("2d");
+  let W = 0, H = 0, dpr = 1;
+  const css = getComputedStyle(document.documentElement);
+  let accent = "#f26a1b", muted = "#9a9ca3";
+  const readColors = () => { accent = css.getPropertyValue("--accent").trim() || accent; muted = css.getPropertyValue("--muted").trim() || muted; };
+  function resize(){
+    dpr = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+    for (const c of [bg, top]){ c.width = W * dpr; c.height = H * dpr; c.getContext("2d").setTransform(dpr,0,0,dpr,0,0); }
+  }
+  addEventListener("resize", resize); resize(); readColors();
+
+  const ptr = { x: W * .6, y: H * .35, px: W * .6, py: H * .35, vx: 0, vy: 0, active: false, last: performance.now() };
+  addEventListener("pointermove", e => {
+    ptr.vx = e.clientX - ptr.x; ptr.vy = e.clientY - ptr.y;
+    ptr.x = e.clientX; ptr.y = e.clientY; ptr.active = true; ptr.last = performance.now();
+  }, { passive: true });
+  document.addEventListener("pointerleave", () => ptr.active = false);
+
+  /* particles */
+  const N = Math.round(Math.min(70, Math.max(30, W * H / 20000)));
+  const parts = Array.from({ length: N }, () => ({
+    x: Math.random() * W, y: Math.random() * H, r: 1 + Math.random() * 2.6,
+    vx: (Math.random() - .5) * .15, vy: -.1 - Math.random() * .3, a: .15 + Math.random() * .35,
+    o: Math.random() < .35, ph: Math.random() * 6.28
+  }));
+  const sparks = [];
+
+  /* butterfly */
+  const bf = { x: W * .3, y: H * .3, vx: 0, vy: 0, ang: -Math.PI / 2, ph: 0 };
+  function stepButterfly(dt, t){
+    const idle = !ptr.active || performance.now() - ptr.last > 3500;
+    let tx, ty;
+    if (idle){ tx = W * (.5 + .35 * Math.sin(t * .00031)); ty = H * (.45 + .3 * Math.sin(t * .00047 + 1)); }
+    else { tx = ptr.x + Math.cos(t * .0021) * 46; ty = ptr.y + Math.sin(t * .0029) * 34 - 18; }
+    const k = idle ? 1.2 : 3.4, damp = 2.6;
+    bf.vx += ((tx - bf.x) * k - bf.vx * damp) * dt;
+    bf.vy += ((ty - bf.y) * k - bf.vy * damp) * dt;
+    // fluttery wobble perpendicular to travel
+    const sp = Math.hypot(bf.vx, bf.vy) || 1;
+    const wob = Math.sin(t * .011) * 120 * Math.min(1, sp / 200);
+    bf.vx += (-bf.vy / sp) * wob * dt; bf.vy += (bf.vx / sp) * wob * dt;
+    bf.x += bf.vx * dt; bf.y += bf.vy * dt;
+    if (sp > 20){
+      const want = Math.atan2(bf.vy, bf.vx);
+      let d = want - bf.ang; d = Math.atan2(Math.sin(d), Math.cos(d)); bf.ang += d * Math.min(1, dt * 6);
+    }
+    bf.ph += dt * (10 + Math.min(sp, 400) * .04);
+    if (Math.random() < Math.min(.5, sp / 700)) sparks.push({ x: bf.x, y: bf.y, vx: (Math.random() - .5) * 20, vy: (Math.random() - .5) * 20 + 8, life: 1 });
+  }
+  function drawButterfly(c){
+    c.save(); c.translate(bf.x, bf.y); c.rotate(bf.ang + Math.PI / 2);
+    const flap = .22 + .78 * Math.abs(Math.cos(bf.ph));
+    for (const s of [-1, 1]){
+      c.save(); c.scale(s * flap, 1);
+      c.globalAlpha = .92; c.fillStyle = accent;
+      c.beginPath(); c.moveTo(0, -2); c.bezierCurveTo(16, -26, 34, -14, 22, 2); c.bezierCurveTo(14, 6, 6, 4, 0, 0); c.fill();
+      c.globalAlpha = .7;
+      c.beginPath(); c.moveTo(0, 1); c.bezierCurveTo(18, 4, 24, 20, 12, 22); c.bezierCurveTo(5, 22, 1, 12, 0, 4); c.fill();
+      c.globalAlpha = .55; c.fillStyle = "#fff";
+      c.beginPath(); c.arc(19, -8, 3, 0, 6.28); c.fill();
+      c.restore();
+    }
+    c.globalAlpha = 1; c.strokeStyle = "#2b2b2b"; c.lineWidth = 3; c.lineCap = "round";
+    c.beginPath(); c.moveTo(0, -8); c.lineTo(0, 14); c.stroke();
+    c.lineWidth = 1; c.beginPath(); c.moveTo(0, -8); c.quadraticCurveTo(-5, -16, -9, -17); c.moveTo(0, -8); c.quadraticCurveTo(5, -16, 9, -17); c.stroke();
+    c.restore();
+  }
+
+  /* spring physics cards */
+  const K = 190, C = 7.5;
+  const cards = new Map();
+  const spring = (el) => {
+    let s = cards.get(el);
+    if (!s){ s = { rx:0, ry:0, tx:0, ty:0, sc:1, vrx:0, vry:0, vtx:0, vty:0, vsc:0, trx:0, try:0, ttx:0, tty:0, tsc:1 }; cards.set(el, s); }
+    return s;
+  };
+  function cardAt(target){
+    const el = target && target.closest && target.closest(".stat, .item");
+    return el && !el.querySelector(".form") ? el : null;
+  }
+  let hover = null;
+  document.addEventListener("pointermove", e => {
+    const el = cardAt(e.target);
+    if (hover && hover !== el){ const s = spring(hover); s.trx = s.try = s.ttx = s.tty = 0; s.tsc = 1; }
+    hover = el;
+    if (!el) return;
+    const r = el.getBoundingClientRect(), s = spring(el);
+    const px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
+    s.trx = -py * 12; s.try = px * 12; s.ttx = px * 6; s.tty = py * 6; s.tsc = 1.025;
+    // flick impulse from pointer speed makes it wobble
+    s.vry += ptr.vx * .35; s.vrx -= ptr.vy * .35;
+  }, { passive: true });
+  document.addEventListener("pointerdown", e => {
+    const el = cardAt(e.target); if (!el) return;
+    const s = spring(el); s.vsc -= 2.2; s.vrx += (Math.random() - .5) * 60; s.vry += (Math.random() - .5) * 60;
+  });
+  document.addEventListener("pointerleave", () => { if (hover){ const s = spring(hover); s.trx = s.try = s.ttx = s.tty = 0; s.tsc = 1; hover = null; } });
+
+  function stepCards(dt){
+    for (const [el, s] of cards){
+      if (!el.isConnected){ cards.delete(el); continue; }
+      for (const [p, v, t] of [["rx","vrx","trx"],["ry","vry","try"],["tx","vtx","ttx"],["ty","vty","tty"],["sc","vsc","tsc"]]){
+        s[v] += ((s[t] - s[p]) * K - s[v] * C) * dt; s[p] += s[v] * dt;
+      }
+      const rest = Math.abs(s.rx) + Math.abs(s.ry) + Math.abs(s.tx) + Math.abs(s.ty) + Math.abs(s.sc - 1) +
+        Math.abs(s.vrx) + Math.abs(s.vry) + Math.abs(s.vtx) + Math.abs(s.vty) + Math.abs(s.vsc);
+      if (rest < .01 && el !== hover){ el.style.transform = ""; cards.delete(el); continue; }
+      el.style.transform = `perspective(700px) translate(${s.tx.toFixed(2)}px,${s.ty.toFixed(2)}px) rotateX(${s.rx.toFixed(2)}deg) rotateY(${s.ry.toFixed(2)}deg) scale(${s.sc.toFixed(4)})`;
+    }
+  }
+
+  let last = performance.now(), frame = 0;
+  function tick(now){
+    const dt = Math.min(.033, (now - last) / 1000); last = now;
+    if (++frame % 120 === 0) readColors();
+    bctx.clearRect(0, 0, W, H); tctx.clearRect(0, 0, W, H);
+    // particles (behind cards)
+    for (const p of parts){
+      p.ph += dt;
+      p.x += (p.vx + Math.sin(p.ph) * .12) * 60 * dt; p.y += p.vy * 60 * dt;
+      const dx = p.x - ptr.x, dy = p.y - ptr.y, d2 = dx * dx + dy * dy;
+      if (ptr.active && d2 < 14400){ const d = Math.sqrt(d2) || 1, f = (1 - d / 120) * 140 * dt; p.x += dx / d * f; p.y += dy / d * f; }
+      if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+      if (p.x < -10) p.x = W + 10; else if (p.x > W + 10) p.x = -10;
+      bctx.globalAlpha = p.a; bctx.fillStyle = p.o ? accent : muted;
+      bctx.beginPath(); bctx.arc(p.x, p.y, p.r, 0, 6.28); bctx.fill();
+    }
+    stepButterfly(dt, now);
+    for (let i = sparks.length - 1; i >= 0; i--){
+      const s = sparks[i]; s.life -= dt * 1.6; if (s.life <= 0){ sparks.splice(i, 1); continue; }
+      s.x += s.vx * dt; s.y += s.vy * dt;
+      tctx.globalAlpha = s.life * .6; tctx.fillStyle = accent; tctx.beginPath(); tctx.arc(s.x, s.y, 1 + s.life * 2, 0, 6.28); tctx.fill();
+    }
+    drawButterfly(tctx);
+    stepCards(dt);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
 </script>
 </body>
 </html>
