@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>olla — Stack-smart kitchenware</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#e9e7df; --ink:#16193a; --navy:#141a4a; --white:#fff; --card:#f7d23a;
+  --gap:1.19vw; --w:87vw; --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--page)}
+body{font-family:"Jost","Futura","Century Gothic",Arial,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);overflow-x:hidden}
+a,button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-decoration:none}
+
+/* nav */
+#nav{position:fixed;left:50%;margin-left:calc(var(--w) / -2);top:1.9vh;width:var(--w);height:5vh;min-height:40px;background:#fff;border-radius:10px;display:flex;align-items:center;padding:0 3.9vw;z-index:50}
+.logo{font-size:clamp(17px,1.35vw,24px);font-weight:600;letter-spacing:-.03em}
+#links{position:absolute;left:50%;transform:translateX(-52%);display:flex;gap:2.4vw;font-size:clamp(12px,.95vw,16px);font-weight:500}
+#links a{position:relative;display:flex;align-items:center;gap:4px}
+#links a::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:1.5px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease)}
+#links a:hover::after{transform:scaleX(1)}
+#links svg{width:9px;height:9px;transition:transform .3s var(--ease)}
+body.menu #links svg{transform:rotate(180deg)}
+body.menu #shopLink{opacity:.55}
+#search{margin-left:auto;width:18px;height:18px;display:grid;place-items:center}
+#search svg{width:18px;height:18px}
+
+/* drop */
+#drop{position:fixed;left:50%;margin-left:calc(var(--w) / -2);width:var(--w);top:calc(1.9vh + 5vh + .9vh);height:9.5vh;min-height:70px;background:#fff;border-radius:10px;z-index:49;display:flex;justify-content:center;align-items:center;gap:6.2vw;clip-path:inset(0 0 100% 0 round 10px);transition:clip-path .45s var(--ease)}
+body.menu #drop{clip-path:inset(0 0 0 0 round 10px)}
+#drop a{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:clamp(10px,.72vw,13px);font-weight:500;opacity:0;transform:translateY(-6px);transition:opacity .3s,transform .4s var(--ease)}
+body.menu #drop a{opacity:1;transform:none}
+body.menu #drop a:nth-child(1){transition-delay:0s}
+body.menu #drop a:nth-child(2){transition-delay:.04s}
+body.menu #drop a:nth-child(3){transition-delay:.08s}
+body.menu #drop a:nth-child(4){transition-delay:.12s}
+body.menu #drop a:nth-child(5){transition-delay:.16s}
+#drop svg{width:clamp(26px,2.1vw,36px);height:clamp(26px,2.1vw,36px);fill:none;stroke:var(--ink);stroke-width:1.3;stroke-linejoin:round;stroke-linecap:round}
+#drop a:hover svg{stroke:#3a49c9}
+
+/* hero */
+#hero{position:relative;width:var(--w);margin:0 auto;padding-top:9.3vh;height:100vh;display:flex;gap:var(--gap)}
+#sky{position:relative;flex:0 0 71.1%;height:89.3vh;border-radius:14px;overflow:hidden;background-color:#0d1650;background-position:center;background-size:cover;background-repeat:no-repeat}
+#sky .tag{position:absolute;left:6.45%;top:8.8%;color:#fff;font-size:clamp(20px,2.05vw,36px);font-weight:500;line-height:1.08;letter-spacing:-.01em;z-index:3}
+sup{font-size:.42em;vertical-align:top;position:relative;top:.2em}
+#sky .word{position:absolute;left:6.1%;bottom:5.4%;color:#fff;font-size:27vh;font-weight:500;line-height:.74;letter-spacing:-.035em;z-index:3}
+#balloons{position:absolute;width:30%;aspect-ratio:1360/2048;background-position:center;background-size:contain;background-repeat:no-repeat;transform-origin:49.4% 94.6%;z-index:2;will-change:transform}
+.grill{position:absolute;left:0;top:0;z-index:2;pointer-events:none;will-change:transform}
+
+#card{position:relative;flex:1;height:89.3vh;border-radius:14px;overflow:hidden;background:var(--card);color:var(--navy);padding:2.2vh 1.4vw}
+#card .new{display:inline-grid;place-items:center;height:3vh;min-height:22px;padding:0 1.25vw;border-radius:30px;background:#fff;font-size:clamp(9px,.66vw,12px);font-weight:600;letter-spacing:.02em}
+#card p{margin-top:2.1vh;font-size:clamp(12px,.92vw,16px);line-height:1.55;font-weight:500}
+#card p sup{font-size:.6em;top:0}
+#pots{position:absolute;left:50%;top:52%;width:118%;aspect-ratio:1;transform:translate(-50%,-50%);object-fit:cover;pointer-events:none;-webkit-mask:radial-gradient(closest-side,#000 72%,transparent 99%);mask:radial-gradient(closest-side,#000 72%,transparent 99%)}
+#card .shop{position:absolute;left:1.4vw;right:1.4vw;bottom:2.4vh;height:4.3vh;min-height:32px;border-radius:40px;background:#fff;display:grid;place-items:center;font-size:clamp(11px,.84vw,15px);font-weight:600;transition:background .3s,color .3s}
+#card .shop:hover{background:var(--navy);color:#fff}
+
+/* kitchen */
+#kitchen{position:relative;width:var(--w);height:89.3vh;margin:var(--gap) auto 0;border-radius:14px;overflow:hidden;background-color:#efe9de;background-position:center;background-size:cover;background-repeat:no-repeat}
+#ktext{position:absolute;left:50%;top:13%;transform:translate(-50%,-50%);text-align:center;color:#1b1b1b;z-index:4;white-space:nowrap}
+#ktext h2{font-size:var(--kh,22px);font-weight:600;letter-spacing:-.01em;line-height:1.2}
+#ktext p{margin-top:.45em;font-size:var(--kp,15px);line-height:1.38;font-weight:450}
+#ktext h2,#ktext p{opacity:0;transform:translateY(14px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+#ktext p{transition-delay:.12s}
+body.landed #ktext h2,body.landed #ktext p{opacity:1;transform:none}
+#foot{height:9.3vh}
+
+@media (max-width:760px){
+  :root{--w:calc(100vw - 32px);--gap:12px}
+  #links,#drop{display:none}
+  #nav{padding:0 18px}
+  #hero{flex-direction:column;height:auto;padding-top:76px}
+  #sky{flex:none;height:72vh}
+  #sky .word{font-size:34vw}
+  #card{flex:none;height:78vh;padding:18px}
+  #card .shop{left:18px;right:18px}
+  #kitchen{height:70vh}
+  #ktext{white-space:normal;width:86%}
+}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <a class="logo" href="#">olla</a>
+  <div id="links">
+    <a href="#" id="shopLink">Shop<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 3.5 5 7l3.5-3.5"/></svg></a>
+    <a href="#">olla</a>
+    <a href="#">olla PRO</a>
+    <a href="#">Simply Good</a>
+    <a href="#">Recipes</a>
+    <a href="#">Journal</a>
+  </div>
+  <button id="search" aria-label="Search">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8.5" cy="8.5" r="6"/><path d="M13 13 18 18"/></svg>
+  </button>
+</nav>
+
+<div id="drop">
+  <a href="#"><svg viewBox="0 0 36 36"><path d="M5 14v17h26V14"/><path d="M3 14 6 6h24l3 8z"/><path d="M14 31v-9h8v9"/><rect x="9" y="18" width="4" height="3"/></svg>Shop All</a>
+  <a href="#"><svg viewBox="0 0 36 36"><path d="M18 4l7 4v8l-7 4-7-4V8z"/><path d="M11 8l7 4 7-4M18 12v8"/><path d="M11 20l7 4v8l-7-4z"/><path d="M25 20l-7 4v8l7-4z"/></svg>Stack-smart™</a>
+  <a href="#"><svg viewBox="0 0 36 36"><path d="M8 28C8 15 17 7 30 7 30 20 22 28 8 28z"/><path d="M8 28c4-6 9-11 16-14"/></svg>EverCoat™</a>
+  <a href="#"><svg viewBox="0 0 36 36"><circle cx="11" cy="11" r="3.5"/><circle cx="25" cy="11" r="3.5"/><circle cx="18" cy="15" r="3"/><path d="M5 28c0-6 3-9 6-9s6 3 6 9z"/><path d="M19 28c0-6 3-9 6-9s6 3 6 9z"/><path d="M13 31c0-4 2-6 5-6s5 2 5 6z"/></svg>Family Sized</a>
+  <a href="#"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="14"/><path d="M20 7 13 19h6l-3 10 8-13h-6z"/></svg>Pro Performance</a>
+</div>
+
+<section id="hero">
+  <div id="sky">
+    <div class="tag">Stack-smart<sup>™</sup><br>kitchenware</div>
+    <div id="balloons"></div>
+    <canvas class="grill" id="gS"></canvas>
+    <div class="word">olla</div>
+  </div>
+  <aside id="card">
+    <span class="new">NEW</span>
+    <p>Say hello to simplicity.<br>Introducing Stack-smart<sup>™</sup><br>kitchenware.</p>
+    <video id="pots" muted loop playsinline autoplay crossorigin="anonymous"></video>
+    <a class="shop" href="#">Shop Stack-smart™</a>
+  </aside>
+</section>
+
+<section id="kitchen">
+  <canvas class="grill" id="gK"></canvas>
+  <div id="ktext">
+    <h2>Cooks for your family. Fits your space.</h2>
+    <p>A stack-smart kitchenware system designed<br>to save up to 50% more cupboard space.</p>
+  </div>
+</section>
+
+<div id="foot"></div>
+
+<script>
+const SKY = "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261109_013341_08629ffd-6ab5-44a8-bec8-f1939ab3a6cd.png&w=2048&q=88";
+const BALLOONS = "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261109_013346_9a3e7023-d72b-4572-a9b2-cc7a8f57a248.png&w=1024&q=90";
+const KITCHEN = "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20261109_015339_b6f97f82-8012-44de-a22b-fe02bd458b20.png&w=2688&q=88";
+const GRILL_CLIP = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20261109_014328_9a7b4687-246e-497b-9bb9-42c285db3f47.mp4";
+const POTS_CLIP = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20261109_014333_8f8987d1-2b8c-4309-a5ac-8bbe9b8835d6.mp4";
+
+const $ = s => document.querySelector(s);
+const clamp = v => Math.min(1, Math.max(0, v));
+
+$("#sky").style.backgroundImage = `url("${SKY}")`;
+$("#balloons").style.backgroundImage = `url("${BALLOONS}")`;
+$("#kitchen").style.backgroundImage = `url("${KITCHEN}")`;
+
+/* ---------- menu ---------- */
+const shopLink = $("#shopLink"), drop = $("#drop");
+let closeT;
+const openMenu = () => { clearTimeout(closeT); document.body.classList.add("menu"); };
+const closeMenu = () => { clearTimeout(closeT); closeT = setTimeout(() => document.body.classList.remove("menu"), 160); };
+shopLink.addEventListener("mouseenter", openMenu);
+shopLink.addEventListener("mouseleave", closeMenu);
+drop.addEventListener("mouseenter", openMenu);
+drop.addEventListener("mouseleave", closeMenu);
+shopLink.addEventListener("click", e => { e.preventDefault(); document.body.classList.toggle("menu"); });
+
+/* ---------- pots video + card colour ---------- */
+const pots = $("#pots");
+pots.addEventListener("loadeddata", () => {
+  try {
+    const c = document.createElement("canvas"); c.width = c.height = 8;
+    const x = c.getContext("2d", { willReadFrequently: true });
+    x.drawImage(pots, 0, 0, pots.videoWidth * .12, pots.videoHeight * .12, 0, 0, 8, 8);
+    const d = x.getImageData(0, 0, 8, 8).data;
+    let r = 0, g = 0, b = 0;
+    for (let i = 0; i < d.length; i += 4){ r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+    const n = d.length / 4;
+    $("#card").style.background = `rgb(${Math.trunc(r / n)}, ${Math.trunc(g / n)}, ${Math.trunc(b / n)})`;
+  } catch (e) {}
+}, { once: true });
+pots.crossOrigin = "anonymous";
+pots.src = POTS_CLIP;
+pots.play().catch(() => {});
+
+/* ---------- grill frame cache ---------- */
+const NF = 48, FS = 560;
+const frames = [];
+let ready = false, dirty = true;
+
+function keyFrame(ctx){
+  const img = ctx.getImageData(0, 0, FS, FS), d = img.data;
+  for (let i = 0; i < d.length; i += 4){
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const m = r > b ? r : b, k = g - m;
+    if (k > 18){
+      d[i + 3] = Math.trunc(Math.max(0, 1 - (k - 18) / 52) * 255);
+      d[i + 1] = Math.min(g, m + 6);
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+async function cacheFrames(){
+  const v = document.createElement("video");
+  v.crossOrigin = "anonymous"; v.muted = true; v.playsInline = true; v.preload = "auto"; v.src = GRILL_CLIP;
+  await new Promise((res, rej) => { v.addEventListener("loadeddata", res, { once: true }); v.addEventListener("error", rej, { once: true }); });
+  const dur = v.duration - 0.05;
+  for (let i = 0; i < NF; i++){
+    v.currentTime = dur * i / (NF - 1);
+    await new Promise(res => v.addEventListener("seeked", res, { once: true }));
+    const c = document.createElement("canvas"); c.width = c.height = FS;
+    const x = c.getContext("2d", { willReadFrequently: true });
+    x.drawImage(v, 0, 0, FS, FS);
+    keyFrame(x);
+    frames.push(c);
+    if (i === 0){ ready = true; dirty = true; }
+  }
+}
+cacheFrames().catch(() => {});
+
+/* ---------- geometry ---------- */
+const sky = $("#sky"), kit = $("#kitchen"), gS = $("#gS"), gK = $("#gK"), bal = $("#balloons");
+const gSx = gS.getContext("2d"), gKx = gK.getContext("2d");
+let S, K, x0, y0, c0, x1, y1, c1, M = 0, END = 1, bh = 0;
+
+const docRect = el => { const r = el.getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height }; };
+
+function measure(){
+  S = docRect(sky); K = docRect(kit);
+  x0 = S.x + .81 * S.w; y0 = S.y + .525 * S.h; c0 = .425 * S.h;
+
+  const bw = .30 * S.w; bh = bw * 2048 / 1360;
+  const handleY = .525 * S.h - c0 / 2 + .075 * c0;
+  bal.style.left = (.81 * S.w - bw * .494) + "px";
+  bal.style.top = (handleY - bh * .946) + "px";
+
+  const sc = Math.max(K.w / 2688, K.h / 1520);
+  const ox = (K.w - 2688 * sc) / 2, oy = (K.h - 1520 * sc) / 2;
+  const H = 1520 * sc;
+  const pt = (nx, ny) => [K.x + ox + nx * 2688 * sc, K.y + oy + ny * H];
+  const [gx, gy] = pt(.489, .641);
+  c1 = H * .2 / .83;
+  x1 = gx; y1 = gy - c1 * .91 + c1 / 2;
+
+  const [hx, hy] = pt(.496, .125);
+  const kt = $("#ktext");
+  kt.style.left = (hx - K.x) + "px"; kt.style.top = (hy - K.y) + "px";
+  kit.style.setProperty("--kh", (H * .0285).toFixed(1) + "px");
+  kit.style.setProperty("--kp", (H * .0205).toFixed(1) + "px");
+
+  END = Math.max(200, K.y - .093 * innerHeight);
+
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  M = Math.ceil(Math.max(c0, c1) * 1.05);
+  for (const c of [gS, gK]){
+    c.style.width = c.style.height = M + "px";
+    c.width = c.height = Math.round(M * dpr);
+  }
+  dirty = true; lastF = -1;
+}
+
+/* ---------- animation loop ---------- */
+let sp = 0, lastF = -1;
+const smooth = q => q * q * (3 - 2 * q);
+
+function draw(f){
+  for (const [cv, cx] of [[gS, gSx], [gK, gKx]]){
+    cx.clearRect(0, 0, cv.width, cv.height);
+    if (ready && frames.length) cx.drawImage(frames[Math.min(f, frames.length - 1)], 0, 0, cv.width, cv.height);
+  }
+}
+
+function tick(){
+  const target = scrollY / END;
+  sp += (target - sp) * .18;
+  if (Math.abs(target - sp) < .0005) sp = target;
+  const p = clamp(sp);
+  const q = clamp((p - .02) / .9);
+  const fall = Math.pow(q, 1.75), sq = smooth(q);
+  const t = performance.now() / 1000;
+  const idle = 1 - clamp(p * 12);
+  const bob = idle * Math.sin(1.9 * t) * 6;
+  const sway = idle * Math.sin(1.3 * t) * 1.4;
+
+  const x = x0 + (x1 - x0) * sq;
+  const y = y0 + (y1 - y0) * fall + bob;
+  const size = c0 + (c1 - c0) * sq;
+  const tilt = Math.sin(q * Math.PI) * -9 + sway;
+  let f = ready ? Math.round(clamp((q - .12) / .72) * (NF - 1)) : 0;
+  f = Math.max(0, Math.min(f, frames.length - 1));
+  if (f !== lastF || dirty){ draw(f); lastF = f; dirty = false; }
+
+  const scl = size / M;
+  gS.style.transform = `translate(${x - S.x - M / 2}px, ${y - S.y - M / 2}px) rotate(${tilt}deg) scale(${scl})`;
+  gK.style.transform = `translate(${x - K.x - M / 2}px, ${y - K.y - M / 2}px) rotate(${tilt}deg) scale(${scl})`;
+
+  const r = clamp(p * 1.25);
+  bal.style.transform = `translate(${r * -.06 * S.w}px, ${bob - r * 1.25 * S.h}px) rotate(${sway * 1.6 - r * 6}deg)`;
+
+  document.body.classList.toggle("landed", p > .9);
+  requestAnimationFrame(tick);
+}
+
+measure();
+addEventListener("resize", measure);
+document.fonts.ready.then(() => { measure(); requestAnimationFrame(tick); });
+window.__olla = { get p(){ return clamp(sp); }, get ready(){ return frames.length; }, measure };
+</script>
+</body>
+</html>
